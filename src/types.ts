@@ -1,12 +1,15 @@
 export interface Bookmark {
   name: string;
   url: string;
+  icon?: string;
 }
 
 export interface BookmarkCollection {
   id: string | number;
   title: string;
   desc?: string;
+  category?: string;
+  tags?: string[];
   links: Bookmark[];
   url?: string; // Legacy support
 }
@@ -16,6 +19,8 @@ export interface Note {
   title: string;
   content: string;
   date: string;
+  isPinned?: boolean;
+  color?: 'yellow' | 'blue' | 'green' | 'purple' | 'rose' | 'slate';
 }
 
 export interface Space {
@@ -25,6 +30,7 @@ export interface Space {
   role: 'admin' | 'regular';
   bookmarks: BookmarkCollection[];
   notes: Note[];
+  autoLockMinutes?: number;
 }
 
 export interface EncryptedSpace {

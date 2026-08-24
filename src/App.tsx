@@ -131,7 +131,8 @@ export const App: React.FC = () => {
             password: parsed.password,
             role: foundSpace.role,
             bookmarks: parsed.bookmarks || [],
-            notes: parsed.notes || []
+            notes: parsed.notes || [],
+            autoLockMinutes: parsed.autoLockMinutes || 0
           };
           setCurrentUser(loadedUser);
           setShowLogin(false);
@@ -234,6 +235,37 @@ export const App: React.FC = () => {
       saveData({ ...data, spaces: updatedSpaces });
     } catch (err: any) {
       notify("Failed to change password: " + err.message, "error");
+    }
+  };
+
+  const handleUpdateAutoLock = async (minutes: number) => {
+    if (!currentUser || !data || !data.spaces) return;
+
+    try {
+      const updatedUser: Space = {
+        ...currentUser,
+        autoLockMinutes: minutes
+      };
+      setCurrentUser(updatedUser);
+
+      const payload = JSON.stringify({
+        password: currentUser.password,
+        bookmarks: currentUser.bookmarks,
+        notes: currentUser.notes,
+        autoLockMinutes: minutes
+      });
+
+      const { cipherText, iv, salt } = await encryptData(payload, currentUser.password);
+
+      const updatedSpaces = data.spaces.map(s => 
+        s.id === currentUser.id 
+          ? { ...s, cipherText, iv, salt } 
+          : s
+      );
+
+      saveData({ ...data, spaces: updatedSpaces });
+    } catch (err: any) {
+      notify("Failed to update auto-lock: " + err.message, "error");
     }
   };
 
@@ -361,6 +393,7 @@ export const App: React.FC = () => {
           }}
           onUpdateUserSpace={handleUpdateUserSpace}
           onUpdatePassword={handleUpdatePassword}
+          onUpdateAutoLock={handleUpdateAutoLock}
           onAdminCreateSpace={handleAdminCreateSpace}
           onAdminResetPassword={handleAdminResetPassword}
           onAdminUpdateRole={handleAdminUpdateRole}

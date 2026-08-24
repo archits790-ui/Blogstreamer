@@ -14,6 +14,7 @@ interface DashboardProps {
   onUpdateData: (data: GlobalData) => void;
   onUpdateUserSpace: (bookmarks: any[], notes: any[]) => Promise<void>;
   onUpdatePassword: (pass: string) => Promise<void>;
+  onUpdateAutoLock?: (minutes: number) => Promise<void>;
   onAdminCreateSpace: (username: string, pass: string, role: 'admin' | 'regular') => Promise<void>;
   onAdminResetPassword: (spaceId: string, newPass: string) => Promise<void>;
   onAdminUpdateRole: (spaceId: string, role: 'admin' | 'regular') => void;
@@ -53,6 +54,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateData,
   onUpdateUserSpace,
   onUpdatePassword,
+  onUpdateAutoLock,
   onAdminCreateSpace,
   onAdminResetPassword,
   onAdminUpdateRole,
@@ -67,6 +69,42 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [tab, setTab] = useState("bookmarks"); 
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Panic Key listener: Esc or Alt+X triggers instant logout
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || (e.altKey && (e.key === 'x' || e.key === 'X'))) {
+        e.preventDefault();
+        onLogout();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onLogout]);
+
+  // Auto-Lock Inactivity Timer
+  React.useEffect(() => {
+    const lockMins = activeUser.autoLockMinutes || 0;
+    if (lockMins <= 0) return;
+
+    let timeoutId: number;
+
+    const resetTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        onLogout();
+      }, lockMins * 60 * 1000);
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach(ev => window.addEventListener(ev, resetTimer));
+    resetTimer();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      events.forEach(ev => window.removeEventListener(ev, resetTimer));
+    };
+  }, [activeUser.autoLockMinutes, onLogout]);
 
   const updateGlobalConfig = (newConfig: any) => {
     onUpdateData({ ...globalData, publicConfig: newConfig });
@@ -107,7 +145,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <SidebarItem icon={icons.fileText} label="Notes" active={tab === 'notes'} onClick={() => setTab('notes')} expanded={isSidebarOpen} />
           <div className="my-4 border-t border-gray-700 opacity-50"></div>
           
-          <SidebarItem icon={icons.key} label="Security" active={tab === 'security'} onClick={() => setTab('security')} expanded={isSidebarOpen} />
+          <SidebarItem icon={icons.key} label="Security & Stealth" active={tab === 'security'} onClick={() => setTab('security')} expanded={isSidebarOpen} />
 
           {/* Admin Only Items */}
           {activeUser.role === 'admin' && (
@@ -147,7 +185,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </h2>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Quick Panic Button */}
+            <button
+              onClick={onLogout}
+              title="Panic Key (Esc) - Instantly exit to blog"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600/10 text-red-600 dark:bg-red-950/40 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white transition border border-red-200 dark:border-red-900/50"
+            >
+              <Icon path={icons.shield} className="w-3.5 h-3.5" />
+              <span>PANIC (Esc)</span>
+            </button>
+
             <button 
               onClick={toggleTheme} 
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"} 
@@ -233,6 +281,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <SecuritySettings 
                 user={activeUser} 
                 onUpdatePass={onUpdatePassword} 
+                onUpdateAutoLock={onUpdateAutoLock}
                 notify={notify} 
                 isDark={isDark} 
               />
