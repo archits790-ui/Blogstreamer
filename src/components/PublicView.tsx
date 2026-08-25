@@ -143,31 +143,16 @@ export const PublicView: React.FC<PublicViewProps> = ({ config, onLoginRequest, 
     );
   };
 
-  const LogoComponent = () => {
-    const [clickCount, setClickCount] = useState(0);
+  const [clickCount, setClickCount] = useState(0);
 
-    const handleClick = () => {
-      handleLogoClick();
-      setClickCount(prev => prev + 1);
-      setTimeout(() => setClickCount(0), 1000);
-      if (clickCount >= 2) {
-        onLoginRequest();
-        setClickCount(0);
-      }
-    };
-
-    if (logoImage) {
-      return <img src={logoImage} alt="Logo" className="h-10 cursor-pointer select-none object-contain" onClick={handleClick} />;
+  const handleLogoClickAction = () => {
+    handleLogoClick();
+    setClickCount(prev => prev + 1);
+    setTimeout(() => setClickCount(0), 1000);
+    if (clickCount >= 2) {
+      onLoginRequest();
+      setClickCount(0);
     }
-    return (
-      <div 
-        className="text-2xl font-bold tracking-tighter select-none cursor-pointer"
-        style={{ color: accentColor }}
-        onClick={handleClick}
-      >
-        {logoText}
-      </div>
-    );
   };
 
   return (
@@ -175,7 +160,17 @@ export const PublicView: React.FC<PublicViewProps> = ({ config, onLoginRequest, 
       <header className={`border-b sticky top-0 z-10 flex-shrink-0 transition-colors duration-300 ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="w-full md:w-auto flex justify-between items-center">
-            <LogoComponent />
+            {logoImage ? (
+              <img src={logoImage} alt="Logo" className="h-10 cursor-pointer select-none object-contain" onClick={handleLogoClickAction} />
+            ) : (
+              <div 
+                className="text-2xl font-bold tracking-tighter select-none cursor-pointer"
+                style={{ color: accentColor }}
+                onClick={handleLogoClickAction}
+              >
+                {logoText}
+              </div>
+            )}
           </div>
 
           <nav className={`flex items-center gap-4 overflow-x-auto no-scrollbar w-full md:w-auto whitespace-nowrap mask-linear-fade ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>

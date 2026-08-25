@@ -12,12 +12,12 @@ interface SetupWizardProps {
 }
 
 export const SetupWizard: React.FC<SetupWizardProps> = ({ isOpen, onComplete, notify, onClose }) => {
-  if (!isOpen) return null;
-
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
+
+  if (!isOpen) return null;
 
   const handleFinish = async () => {
     if (password !== confirmPass) return notify("Passwords do not match", "error");
